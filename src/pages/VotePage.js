@@ -1,31 +1,23 @@
 import { useState, useEffect, useCallback } from "react";
+import { useCats } from "../contexts/CatsContext";
 import getCats from "../services/CatService";
 
-let sequence = 0;
-
 const VotePage = () => {
-  const [cats, setCats] = useState([]);
+  const { cats, setCatsAndScores, updateScore } = useCats();
   const [currentPair, setCurrentPair] = useState([]);
-
-  const uniqueId = () => {
-    sequence += 1;
-    return `kv-${Date.now()}-${sequence}-${Math.random()
-      .toString(36)
-      .substr(2, 9)}`;
-  };
 
   useEffect(() => {
     const fetchCats = async () => {
       try {
         const catData = await getCats();
-        setCats(catData);
+        setCatsAndScores(catData);
       } catch (error) {
         console.error("Erreur lors de la récupération des images:", error);
       }
     };
 
-    fetchCats();
-  }, []);
+    if (!cats.length) fetchCats();
+  }, [cats, setCatsAndScores]);
 
   const selectRandomCats = useCallback(() => {
     let firstIndex, secondIndex;
@@ -46,7 +38,8 @@ const VotePage = () => {
   }, [cats, selectRandomCats]);
 
   const handleVote = (catId) => {
-    console.log(`Vote pour le chat: ${catId}`);
+    // console.log(`Vote pour le chat: ${catId}`);
+    updateScore(catId);
     selectRandomCats();
   };
 
@@ -55,11 +48,7 @@ const VotePage = () => {
       <h2>Qui est le plus mignon ?</h2>
       <div className="cats-pair">
         {currentPair.map((cat) => (
-          <div
-            key={uniqueId()}
-            className="cat"
-            onClick={() => handleVote(cat.id)}
-          >
+          <div key={cat.id} className="cat" onClick={() => handleVote(cat.id)}>
             <img
               src={cat.url}
               alt={`Chat ${cat.id}`}
